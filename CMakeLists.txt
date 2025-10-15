@@ -11,13 +11,15 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 
 # Executable
 add_executable(robot_chase src/robot_chase.cpp)
 
 # Add dependencies
-ament_target_dependencies(robot_chase rclcpp)
+ament_target_dependencies(robot_chase rclcpp tf2_ros geometry_msgs)
 
 # Install executables
 install(TARGETS
