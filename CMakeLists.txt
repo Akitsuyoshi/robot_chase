@@ -10,6 +10,20 @@ find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+
+
+# Executable
+add_executable(robot_chase src/robot_chase.cpp)
+
+# Add dependencies
+ament_target_dependencies(robot_chase rclcpp)
+
+# Install executables
+install(TARGETS
+  robot_chase
+  DESTINATION
+  lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
