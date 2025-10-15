@@ -20,16 +20,16 @@ public:
     target_frame_ =
         declare_parameter<std::string>("target_frame", "morty/base_link");
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(get_clock());
-    tf_listen_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     pub_ = create_publisher<geometry_msgs::msg::Twist>("rick/cmd_vel", 1);
-    timer_ = create_wall_timer(std::chrono::seconds(1),
+    timer_ = create_wall_timer(std::chrono::milliseconds(100),
                                std::bind(&RobotChase::on_timer, this));
   }
 
 private:
   void on_timer() {
-    std::string fromFrame = target_frame_.c_str();
+    std::string fromFrame = target_frame_;
     std::string toFrame = "rick/base_link";
 
     geometry_msgs::msg::TransformStamped t;
@@ -45,18 +45,31 @@ private:
     double error_distance = std::hypot(t_x, t_y);
     double error_yaw = std::atan2(t_y, t_x);
 
-    const double kp_distance = 0.5;
-    const double kp_yaw = 0.8;
+    // Linear vars
+    const double kp_distance = 0.7;
+    const double max_linear = 1.0;
+
+    // Angular vars
+    const double kp_yaw = 0.7;
+    const double max_angular = M_PI / 4;
+
+    // Stop and bump vars
+    const double bump_distance = 0.15;
 
     geometry_msgs::msg::Twist cmd;
-    cmd.linear.x = kp_distance * error_distance;
-    cmd.angular.z = kp_yaw * error_yaw;
+    if (error_distance < bump_distance) {
+      cmd.linear.x = 0.0;
+      cmd.angular.z = 0.0;
+    } else {
+      cmd.linear.x = std::min(kp_distance * error_distance, max_linear);
+      cmd.angular.z = std::clamp(kp_yaw * error_yaw, -max_angular, max_angular);
+    }
     pub_->publish(cmd);
   }
 
-  rclcpp::TimerBase::SharedPtr timer_{nullptr};
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_{nullptr};
-  std::shared_ptr<tf2_ros::TransformListener> tf_listen_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   std::string target_frame_;
 };
