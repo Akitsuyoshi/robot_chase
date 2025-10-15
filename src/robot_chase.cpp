@@ -36,7 +36,7 @@ private:
     try {
       t = tf_buffer_->lookupTransform(toFrame, fromFrame, tf2::TimePointZero);
     } catch (const tf2::TransformException &e) {
-      RCLCPP_WARN(get_logger(), "Cound not transform %s to %s: %s",
+      RCLCPP_WARN(get_logger(), "Could not transform %s to %s: %s",
                   toFrame.c_str(), fromFrame.c_str(), e.what());
       return;
     }
@@ -54,16 +54,17 @@ private:
     const double max_angular = M_PI / 4;
 
     // Stop and bump vars
-    const double bump_distance = 0.15;
+    const double bump_distance = 0.4;
 
     geometry_msgs::msg::Twist cmd;
     if (error_distance < bump_distance) {
       cmd.linear.x = 0.0;
-      cmd.angular.z = 0.0;
+    } else if (std::abs(error_yaw) > M_PI / 2) {
+      cmd.linear.x = 0.0;
     } else {
       cmd.linear.x = std::min(kp_distance * error_distance, max_linear);
-      cmd.angular.z = std::clamp(kp_yaw * error_yaw, -max_angular, max_angular);
     }
+    cmd.angular.z = std::clamp(kp_yaw * error_yaw, -max_angular, max_angular);
     pub_->publish(cmd);
   }
 
