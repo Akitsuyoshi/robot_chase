@@ -50,11 +50,11 @@ private:
     const double max_linear = 1.0;
 
     // Angular vars
-    const double kp_yaw = 0.7;
-    const double max_angular = M_PI / 4;
+    const double kp_yaw = 1.0;
+    const double max_angular = M_PI / 3;
 
     // Stop and bump vars
-    const double bump_distance = 0.4;
+    const double bump_distance = 0.36;
 
     geometry_msgs::msg::Twist cmd;
     if (error_distance < bump_distance) {
@@ -62,7 +62,9 @@ private:
     } else if (std::abs(error_yaw) > M_PI / 2) {
       cmd.linear.x = 0.0;
     } else {
-      cmd.linear.x = std::min(kp_distance * error_distance, max_linear);
+      double alignment_fact = std::cos(error_yaw);
+      cmd.linear.x =
+          std::min(kp_distance * error_distance * alignment_fact, max_linear);
     }
     cmd.angular.z = std::clamp(kp_yaw * error_yaw, -max_angular, max_angular);
     pub_->publish(cmd);
